@@ -905,6 +905,22 @@ $('#fileLoad').onchange = e => {
   };
   rd.readAsText(f); e.target.value = '';
 };
+$('#btnReset').onclick = ev => {
+  const b = ev.target;
+  if (b.dataset.armed !== '1') {
+    b.dataset.armed = '1'; b.textContent = 'Really reset? This can’t be undone';
+    setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Reset to defaults'; } }, 3500);
+    return;
+  }
+  b.dataset.armed = ''; b.textContent = 'Reset to defaults';
+  APP.resetAll();
+  Object.assign(S.view, APP.fitView(W, H - 90));
+  $('#imgCtl').style.display = 'none'; $('#btnImgClear').style.display = 'none';
+  setTool('pan');
+  afterLoad();
+  $('#mdSave').classList.remove('show');
+  toast('Back to defaults');
+};
 function afterLoad() {
   renderGroups(); renderAnn(); syncBase(); syncLeg();
   $('#mTitle').value = S.title; $('#mSub').value = S.subtitle;

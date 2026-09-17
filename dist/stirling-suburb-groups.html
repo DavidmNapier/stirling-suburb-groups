@@ -507,6 +507,8 @@ body.side-closed #side{display:none}
         <button class="hbtn" id="btnFileLoad" style="height:34px">Load a setup file…</button>
       </div>
       <input type="file" id="fileLoad" accept="application/json,.json" hidden>
+      <p class="hint" style="margin-top:16px">Wipe your changes and start over with the original six groups, default colours and blank annotations. This cannot be undone — download a setup file first if you might want this version back.</p>
+      <button class="minibtn warn" id="btnReset" style="width:100%">Reset to defaults</button>
     </div>
   </div>
 </div></div>
@@ -1019,6 +1021,10 @@ const THEMES = {
 };
 APP.THEMES = THEMES; APP.PALETTE = PALETTE;
 
+const DEFAULT_LAYERS = { streets:true, roads:true, subs:true, ctx:true, lga:true, fill:true,
+                          legend:true, scale:true, north:true, titleBlk:true, grpLab:true };
+const DEFAULT_TITLE = 'Suburb groups', DEFAULT_SUBTITLE = 'City of Stirling';
+
 /* ---------- state ---------- */
 const S = {
   groups: [],
@@ -1027,11 +1033,10 @@ const S = {
   measure: null,
   view: { cx: 0, cy: 0, scale: 1 },
   theme: 'light',
-  layers: { streets:true, roads:true, subs:true, ctx:true, lga:true, fill:true,
-            legend:true, scale:true, north:true, titleBlk:true, grpLab:true },
+  layers: Object.assign({}, DEFAULT_LAYERS),
   legendPos: 'br',
-  title: 'Suburb groups',
-  subtitle: 'City of Stirling',
+  title: DEFAULT_TITLE,
+  subtitle: DEFAULT_SUBTITLE,
   by: '',
   underlay: null,          // {img, cx, cy, w, h, op, locked}
   tool: 'pan',
@@ -1180,6 +1185,19 @@ APP.resetGroups = function () {
   gid = 1;
   S.groups = DEFAULT_GROUPS.map((g, i) => APP.makeGroup(g.name, g.subs, i));
   S.groups.forEach(dissolve);
+};
+
+/* wipe everything back to a fresh boot — groups, annotations, theme, furniture, underlay */
+APP.resetAll = function () {
+  APP.resetGroups();
+  S.texts = []; S.shapes = []; S.measure = null; S.draft = null;
+  S.theme = 'light';
+  Object.assign(S.layers, DEFAULT_LAYERS);
+  S.legendPos = 'br';
+  S.title = DEFAULT_TITLE; S.subtitle = DEFAULT_SUBTITLE; S.by = '';
+  S.underlay = null;
+  S.tool = 'pan';
+  S.selGroup = 0; S.selText = null; S.selShape = null;
 };
 
 /* dissolve a group's suburbs into one outline using polygon-clipping */
@@ -2637,6 +2655,22 @@ $('#fileLoad').onchange = e => {
     catch (err) { toast('That file could not be read: ' + err.message, true); }
   };
   rd.readAsText(f); e.target.value = '';
+};
+$('#btnReset').onclick = ev => {
+  const b = ev.target;
+  if (b.dataset.armed !== '1') {
+    b.dataset.armed = '1'; b.textContent = 'Really reset? This can’t be undone';
+    setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Reset to defaults'; } }, 3500);
+    return;
+  }
+  b.dataset.armed = ''; b.textContent = 'Reset to defaults';
+  APP.resetAll();
+  Object.assign(S.view, APP.fitView(W, H - 90));
+  $('#imgCtl').style.display = 'none'; $('#btnImgClear').style.display = 'none';
+  setTool('pan');
+  afterLoad();
+  $('#mdSave').classList.remove('show');
+  toast('Back to defaults');
 };
 function afterLoad() {
   renderGroups(); renderAnn(); syncBase(); syncLeg();

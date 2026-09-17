@@ -45,6 +45,10 @@ const THEMES = {
 };
 APP.THEMES = THEMES; APP.PALETTE = PALETTE;
 
+const DEFAULT_LAYERS = { streets:true, roads:true, subs:true, ctx:true, lga:true, fill:true,
+                          legend:true, scale:true, north:true, titleBlk:true, grpLab:true };
+const DEFAULT_TITLE = 'Suburb groups', DEFAULT_SUBTITLE = 'City of Stirling';
+
 /* ---------- state ---------- */
 const S = {
   groups: [],
@@ -53,11 +57,10 @@ const S = {
   measure: null,
   view: { cx: 0, cy: 0, scale: 1 },
   theme: 'light',
-  layers: { streets:true, roads:true, subs:true, ctx:true, lga:true, fill:true,
-            legend:true, scale:true, north:true, titleBlk:true, grpLab:true },
+  layers: Object.assign({}, DEFAULT_LAYERS),
   legendPos: 'br',
-  title: 'Suburb groups',
-  subtitle: 'City of Stirling',
+  title: DEFAULT_TITLE,
+  subtitle: DEFAULT_SUBTITLE,
   by: '',
   underlay: null,          // {img, cx, cy, w, h, op, locked}
   tool: 'pan',
@@ -206,6 +209,19 @@ APP.resetGroups = function () {
   gid = 1;
   S.groups = DEFAULT_GROUPS.map((g, i) => APP.makeGroup(g.name, g.subs, i));
   S.groups.forEach(dissolve);
+};
+
+/* wipe everything back to a fresh boot — groups, annotations, theme, furniture, underlay */
+APP.resetAll = function () {
+  APP.resetGroups();
+  S.texts = []; S.shapes = []; S.measure = null; S.draft = null;
+  S.theme = 'light';
+  Object.assign(S.layers, DEFAULT_LAYERS);
+  S.legendPos = 'br';
+  S.title = DEFAULT_TITLE; S.subtitle = DEFAULT_SUBTITLE; S.by = '';
+  S.underlay = null;
+  S.tool = 'pan';
+  S.selGroup = 0; S.selText = null; S.selShape = null;
 };
 
 /* dissolve a group's suburbs into one outline using polygon-clipping */
