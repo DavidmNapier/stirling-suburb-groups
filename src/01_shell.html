@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Suburb Groups — City of Stirling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#191e22; --panel:#222a2f; --panel2:#2a333a; --panel3:#323d45;
+  --line:#3a454e; --line-soft:#2f3940;
+  --tx:#e9edef; --tx-dim:#9dabb3; --tx-mute:#6d7c85;
+  --accent:#e3a74e; --accent-ink:#2a1d07;
+  --danger:#d9695a; --ok:#5fb08a;
+  --rail:52px; --side:308px;
+  --fs:13px;
+  color-scheme:dark;
+}
+:root:not([data-theme="light"]){}
+*{box-sizing:border-box}
+html{height:100%}
+body{min-height:100%;margin:0;overflow:hidden}
+body{
+  background:var(--bg); color:var(--tx);
+  font:400 var(--fs)/1.45 'IBM Plex Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;padding:0}
+input[type=text],input[type=number],textarea,select{
+  background:var(--panel2); border:1px solid var(--line); border-radius:5px;
+  padding:6px 8px; color:var(--tx); width:100%; min-width:0;
+}
+input[type=text]:focus,textarea:focus,select:focus,input[type=number]:focus{
+  outline:2px solid var(--accent); outline-offset:-1px; border-color:transparent;
+}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--accent);height:18px;margin:0}
+input[type=color]{
+  -webkit-appearance:none;appearance:none;width:100%;height:26px;padding:0;
+  border:1px solid var(--line);border-radius:5px;background:none;cursor:pointer;
+}
+input[type=color]::-webkit-color-swatch-wrapper{padding:2px}
+input[type=color]::-webkit-color-swatch{border:0;border-radius:3px}
+.mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+/* The frame may size itself to our content, so we must PUSH a height rather than
+   inherit one: min-height gives the document real extent even if the viewport
+   reports almost nothing, and JS refines it to the true viewport when there is one. */
+#app{display:grid;grid-template-rows:auto minmax(0,1fr);height:100vh;height:100dvh;min-height:600px}
+header{
+  display:flex;align-items:center;gap:10px;padding:0 12px;height:46px;
+  background:var(--panel);border-bottom:1px solid var(--line);flex:0 0 auto;
+}
+header .mark{width:20px;height:20px;flex:0 0 auto}
+header h1{font-size:14px;font-weight:600;margin:0;letter-spacing:.005em;white-space:nowrap}
+header h1 span{color:var(--tx-mute);font-weight:400}
+.build{font-style:normal;font-size:10px;color:var(--tx-mute);border:1px solid var(--line);
+  border-radius:4px;padding:1px 4px;flex:0 0 auto}
+header .spacer{flex:1}
+.hbtn{
+  display:flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:6px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--tx-dim);
+  font-size:12.5px;font-weight:500;white-space:nowrap;
+}
+.hbtn:hover{background:var(--panel3);color:var(--tx)}
+.hbtn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.hbtn.pri:hover{filter:brightness(1.08)}
+.hbtn svg{width:14px;height:14px;flex:0 0 auto}
+
+main{display:grid;grid-template-columns:var(--side) minmax(0,1fr);min-height:0;position:relative;overflow:hidden}
+body.side-closed main{grid-template-columns:0 minmax(0,1fr)}
+
+/* ---------- sidebar ---------- */
+#side{
+  background:var(--panel);border-right:1px solid var(--line);
+  overflow-y:auto;overflow-x:hidden;min-height:0;
+  scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+}
+body.side-closed #side{display:none}
+#side::-webkit-scrollbar{width:9px}
+#side::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:2px solid var(--panel)}
+.sec{border-bottom:1px solid var(--line-soft)}
+.sec>summary{
+  display:flex;align-items:center;gap:7px;padding:9px 12px;cursor:pointer;
+  font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--tx-dim);
+  list-style:none;user-select:none;
+}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary:hover{color:var(--tx);background:var(--panel2)}
+.sec>summary .chev{width:10px;height:10px;transition:transform .15s;color:var(--tx-mute)}
+.sec[open]>summary .chev{transform:rotate(90deg)}
+.sec>summary .count{margin-left:auto;font-size:11px;color:var(--tx-mute);font-weight:400}
+.secbody{padding:2px 12px 13px}
+
+/* group cards */
+.grp{border:1px solid var(--line);border-radius:7px;margin-bottom:7px;background:var(--panel2);overflow:hidden}
+.grp.sel{border-color:var(--accent)}
+.grphead{display:flex;align-items:center;gap:8px;padding:7px 8px;cursor:pointer}
+.grphead:hover{background:var(--panel3)}
+.swatch{width:15px;height:15px;border-radius:3px;flex:0 0 auto;border:2px solid #fff3}
+.grpname{flex:1;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grpmeta{font-size:10.5px;color:var(--tx-mute);white-space:nowrap}
+.eye{width:24px;height:24px;display:grid;place-items:center;border-radius:4px;color:var(--tx-mute);flex:0 0 auto}
+.eye:hover{background:var(--panel);color:var(--tx)}
+.eye.off{opacity:.38}
+.grpbody{padding:9px;border-top:1px solid var(--line);display:none;gap:9px;flex-direction:column}
+.grp.open .grpbody{display:flex}
+.row{display:grid;grid-template-columns:76px 1fr;align-items:center;gap:8px}
+.row>label{font-size:11.5px;color:var(--tx-dim)}
+.row .val{font-size:11px;color:var(--tx-mute);text-align:right;min-width:32px}
+.rowv{display:grid;grid-template-columns:76px 1fr 34px;align-items:center;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{
+  font-size:11px;padding:3px 7px;border-radius:11px;background:var(--panel);
+  border:1px solid var(--line);color:var(--tx-dim);display:flex;align-items:center;gap:4px;
+}
+.chip:hover{border-color:var(--danger);color:var(--tx)}
+.chip .x{font-size:13px;line-height:1;color:var(--tx-mute)}
+.chip:hover .x{color:var(--danger)}
+.hint{font-size:11px;color:var(--tx-mute);line-height:1.5}
+.minibtn{
+  font-size:11.5px;padding:5px 9px;border-radius:5px;background:var(--panel);
+  border:1px solid var(--line);color:var(--tx-dim);
+}
+.minibtn:hover{background:var(--panel3);color:var(--tx)}
+.minibtn.warn:hover{border-color:var(--danger);color:var(--danger)}
+.btnrow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* toggles */
+.tog{display:flex;align-items:center;gap:9px;padding:5px 0;cursor:pointer;font-size:12.5px;color:var(--tx-dim)}
+.tog:hover{color:var(--tx)}
+.tog input{appearance:none;width:30px;height:17px;border-radius:9px;background:var(--line);position:relative;flex:0 0 auto;transition:background .15s;margin:0;cursor:pointer}
+.tog input:checked{background:var(--accent)}
+.tog input::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:transform .15s}
+.tog input:checked::after{transform:translateX(13px)}
+.seg{display:grid;grid-auto-flow:column;gap:3px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:3px}
+.seg button{padding:5px 4px;border-radius:4px;font-size:11.5px;color:var(--tx-dim);text-align:center}
+.seg button:hover{background:var(--panel3);color:var(--tx)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.fieldlab{font-size:11px;color:var(--tx-mute);margin:9px 0 4px;display:block}
+
+/* ---------- map ---------- */
+#mapwrap{grid-column:2;position:relative;min-width:0;min-height:0;overflow:hidden;background:#0f1316}
+#map{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#map.dragging{cursor:grabbing}
+#map.pick{cursor:crosshair}
+
+#rail{
+  position:absolute;left:11px;top:11px;display:flex;flex-direction:column;gap:3px;
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:4px;
+  box-shadow:0 3px 14px #0006;z-index:5;
+}
+.tool{
+  width:38px;height:38px;display:grid;place-items:center;border-radius:6px;color:var(--tx-dim);position:relative;
+}
+.tool:hover{background:var(--panel3);color:var(--tx)}
+.tool.on{background:var(--accent);color:var(--accent-ink)}
+.tool svg{width:18px;height:18px}
+.tool[data-tip]:hover::after{
+  content:attr(data-tip);position:absolute;left:46px;top:50%;transform:translateY(-50%);
+  background:#0e1215;border:1px solid var(--line);padding:5px 9px;border-radius:5px;
+  font-size:11.5px;white-space:nowrap;pointer-events:none;z-index:20;color:var(--tx);
+}
+.raildiv{height:1px;background:var(--line);margin:3px 2px}
+
+#zoomer{position:absolute;right:11px;bottom:60px;display:flex;flex-direction:column;gap:3px;z-index:5}
+#zoomer button{
+  width:34px;height:34px;display:grid;place-items:center;background:var(--panel);
+  border:1px solid var(--line);border-radius:7px;color:var(--tx-dim);box-shadow:0 2px 8px #0005;
+}
+#zoomer button:hover{background:var(--panel3);color:var(--tx)}
+
+#statusbar{
+  position:absolute;left:0;right:0;bottom:0;height:26px;display:flex;align-items:center;
+  gap:14px;padding:0 12px;background:#141a1ecc;backdrop-filter:blur(6px);
+  border-top:1px solid var(--line);font-size:11px;color:var(--tx-mute);z-index:4;
+  pointer-events:none;
+}
+#statusbar b{font-weight:500;color:var(--tx-dim)}
+#toast{
+  position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:30;
+  background:#0e1215ee;border:1px solid var(--line);border-radius:7px;padding:8px 14px;
+  font-size:12.5px;box-shadow:0 6px 20px #0008;opacity:0;pointer-events:none;transition:opacity .2s;
+  max-width:80%;text-align:center;
+}
+#toast.show{opacity:1}
+#toast.err{border-color:var(--danger);color:#ffd9d3}
+
+#hover{
+  position:absolute;z-index:6;pointer-events:none;background:#0e1215ee;border:1px solid var(--line);
+  border-radius:6px;padding:5px 9px;font-size:11.5px;display:none;box-shadow:0 3px 12px #0007;white-space:nowrap;
+}
+#hover .h2{color:var(--tx-mute);font-size:10.5px}
+
+/* text editor popover */
+#tedit{
+  position:absolute;z-index:12;width:232px;background:var(--panel);border:1px solid var(--line);
+  border-radius:9px;padding:10px;box-shadow:0 8px 28px #0009;display:none;
+}
+#tedit textarea{height:56px;resize:none}
+
+/* ---------- modal ---------- */
+.modal{
+  position:fixed;inset:0;z-index:40;background:#0b0e10cc;display:none;
+  align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px);
+}
+.modal.show{display:flex}
+.sheet{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  width:min(780px,100%);max-height:min(88vh,760px);display:flex;flex-direction:column;
+  box-shadow:0 20px 60px #000a;overflow:hidden;
+}
+.sheet header{background:none;border-bottom:1px solid var(--line);height:50px;padding:0 16px}
+.sheet header h2{font-size:15px;font-weight:600;margin:0}
+.sheetbody{padding:16px;overflow-y:auto;min-height:0}
+.sheetfoot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.x-close{width:30px;height:30px;display:grid;place-items:center;border-radius:6px;color:var(--tx-mute);font-size:19px}
+.x-close:hover{background:var(--panel2);color:var(--tx)}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 16px;flex-wrap:wrap}
+.tabs button{padding:9px 12px;font-size:12.5px;color:var(--tx-mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--tx)}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px}
+.card h4{margin:0 0 6px;font-size:12.5px;font-weight:600}
+.card p{margin:0;font-size:12px;color:var(--tx-dim);line-height:1.55}
+
+.help h3{font-size:13.5px;margin:20px 0 7px;font-weight:600}
+.help h3:first-child{margin-top:0}
+.help p,.help li{font-size:12.8px;color:var(--tx-dim);line-height:1.65}
+.help p{margin:0 0 9px}
+.help ul{margin:0 0 9px;padding-left:19px}
+.help li{margin-bottom:4px}
+.help kbd{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--panel3);
+  border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;color:var(--tx);
+}
+.help strong{color:var(--tx);font-weight:600}
+.note{border-left:2px solid var(--accent);padding:9px 12px;background:#e3a74e10;border-radius:0 6px 6px 0;margin:0 0 12px}
+.note p{margin:0;font-size:12.3px}
+
+.planlist{display:flex;flex-direction:column;gap:6px}
+.plan{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:7px}
+.plan .nm{flex:1;font-size:12.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plan .dt{font-size:10.5px;color:var(--tx-mute);white-space:nowrap}
+.empty{text-align:center;padding:26px 12px;color:var(--tx-mute);font-size:12.5px}
+
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+#crash{display:none;padding:24px;background:var(--bg)}
+#crash:not([hidden]){display:block}
+.crashbox{max-width:440px;margin:0 auto;background:var(--panel);border:1px solid var(--danger);border-radius:10px;padding:18px}
+#diag{display:none;padding:11px 14px;background:#3b2020;border-bottom:1px solid var(--danger);
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11.5px;line-height:1.65;color:#ffdad3;word-break:break-word}
+#diag:not([hidden]){display:block}
+#diag b{color:#fff}
+.crashbox h2{margin:0 0 8px;font-size:15px}
+.crashbox p{margin:0 0 8px;font-size:12.5px;color:var(--tx-dim);line-height:1.6;word-break:break-word}
+.crashbox .crashhint{color:var(--tx-mute)}
+
+/* responsive */
+@media (max-width:900px){
+  :root{--side:min(300px,84vw)}
+  main{grid-template-columns:0 minmax(0,1fr)}
+  #side{position:absolute;left:0;top:0;bottom:0;width:var(--side);z-index:15;box-shadow:8px 0 26px #0008;display:none}
+  body.side-open #side{display:block}
+  body.side-open #scrim{display:block}
+  #scrim{display:none;position:absolute;inset:0;background:#0009;z-index:14}
+  header h1 span{display:none}
+  .hbtn .lbl{display:none}
+  .hbtn{padding:0 9px}
+  #rail{left:8px;top:8px}
+  .tool{width:44px;height:44px}
+  .tool svg{width:20px;height:20px}
+  .tool[data-tip]:hover::after{display:none}
+  #zoomer button{width:40px;height:40px}
+  #zoomer{bottom:66px}
+  #statusbar{height:30px;font-size:11.5px}
+  #statusbar .coordcell{display:none}
+  .grid2{grid-template-columns:1fr}
+}
+@media (min-width:901px){#scrim{display:none!important}}
+</style>
+</head>
+<body>
+<div id="diag" hidden></div>
+<div id="crash" hidden>
+  <div class="crashbox">
+    <h2>The map could not start</h2>
+    <p id="crashmsg"></p>
+    <p class="crashhint">Try reloading. If it keeps happening, send this message back to Claude and it can be fixed.</p>
+  </div>
+</div>
+<div id="app">
+  <header>
+    <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.7" stroke-linejoin="round">
+      <path d="M3 6.5l6-2.5 6 2.5 6-2.5v13l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13M15 6.5v13"/>
+    </svg>
+    <h1>Suburb Groups <span>· City of Stirling</span></h1><em class="build">b3</em>
+    <div class="spacer"></div>
+    <button class="hbtn" id="btnSide" title="Show or hide the panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      <span class="lbl">Panel</span>
+    </button>
+    <button class="hbtn" id="btnSave">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      <span class="lbl">Save</span>
+    </button>
+    <button class="hbtn pri" id="btnExport">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+      <span class="lbl">Export</span>
+    </button>
+    <button class="hbtn" id="btnHelp" title="Help">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.9 2.9 0 015.6 1c0 1.9-2.8 2.4-2.8 2.4"/><path d="M12 17h.01"/></svg>
+      <span class="lbl">Help</span>
+    </button>
+  </header>
+
+  <main>
+    <aside id="side">
+      <details class="sec" open>
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Groups<span class="count" id="grpCount"></span></summary>
+        <div class="secbody">
+          <div id="grpList"></div>
+          <div class="btnrow" style="margin-top:8px">
+            <button class="minibtn" id="btnAddGrp">+ Add group</button>
+            <button class="minibtn" id="btnAllRed">All lines one colour</button>
+            <input type="color" id="allCol" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none" tabindex="-1" aria-hidden="true">
+          </div>
+          <label class="tog" style="margin-top:8px"><input type="checkbox" id="snapOn" checked> Snap to street centrelines</label>
+          <p class="hint">Select a group, then click suburbs on the map to move them in or out. Hold <kbd style="font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--panel3);border:1px solid var(--line);border-radius:3px;padding:0 4px">Shift</kbd> while dragging a handle to ignore snapping.</p>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Unassigned<span class="count" id="unCount"></span></summary>
+        <div class="secbody"><div class="chips" id="unList"></div></div>
+      </details>
+
+      <details class="sec" open>
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Base map</summary>
+        <div class="secbody">
+          <div class="seg" id="segBase" style="grid-template-columns:repeat(3,1fr);grid-auto-flow:row">
+            <button data-v="light">Light</button><button data-v="street">Street</button><button data-v="satellite">Satellite</button>
+            <button data-v="dark">Dark</button><button data-v="plain">Plain</button>
+          </div>
+          <span class="fieldlab">Aerial or custom underlay</span>
+          <div class="btnrow">
+            <button class="minibtn" id="btnImg">Load image…</button>
+            <button class="minibtn warn" id="btnImgClear" style="display:none">Remove</button>
+          </div>
+          <input type="file" id="fileImg" accept="image/*" hidden>
+          <div id="imgCtl" style="display:none;margin-top:9px">
+            <div class="rowv"><label>Opacity</label><input type="range" id="imgOp" min="0" max="100" value="100"><span class="val" id="imgOpV">100</span></div>
+            <label class="tog"><input type="checkbox" id="imgLock"> Lock position</label>
+            <p class="hint">Drag the image to move it, and use <kbd>Shift</kbd> + drag to resize. Line it up with the suburb outlines, then lock it.</p>
+          </div>
+          <span class="fieldlab">Layers</span>
+          <label class="tog"><input type="checkbox" id="lyStreets" checked> Streets (real road network)</label>
+          <label class="tog"><input type="checkbox" id="lyRoads" checked> Suburb boundary lines</label>
+          <label class="tog"><input type="checkbox" id="lySub" checked> Suburb names</label>
+          <label class="tog"><input type="checkbox" id="lyCtx" checked> Surrounding suburbs</label>
+          <label class="tog"><input type="checkbox" id="lyLga" checked> Council boundary</label>
+          <label class="tog"><input type="checkbox" id="lyFill" checked> Group shading</label>
+        </div>
+      </details>
+
+      <details class="sec" open>
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Map furniture</summary>
+        <div class="secbody">
+          <span class="fieldlab">Title</span>
+          <input type="text" id="mTitle" placeholder="Map title">
+          <span class="fieldlab">Subtitle</span>
+          <input type="text" id="mSub" placeholder="Subtitle or reference">
+          <label class="tog" style="margin-top:8px"><input type="checkbox" id="lyLegend" checked> Legend</label>
+          <label class="tog"><input type="checkbox" id="lyScale" checked> Scale bar</label>
+          <label class="tog"><input type="checkbox" id="lyNorth" checked> North arrow</label>
+          <label class="tog"><input type="checkbox" id="lyTitleBlk" checked> Title block</label>
+          <label class="tog"><input type="checkbox" id="lyGrpLab" checked> Group labels on map</label>
+          <span class="fieldlab">Legend position</span>
+          <div class="seg" id="segLeg" style="grid-template-columns:repeat(2,1fr);grid-auto-flow:row">
+            <button data-v="tl">Top left</button><button data-v="tr">Top right</button>
+            <button data-v="bl">Bottom left</button><button data-v="br">Bottom right</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Text &amp; shapes<span class="count" id="annCount"></span></summary>
+        <div class="secbody"><div id="annList"></div>
+          <p class="hint">Pick the text or draw tool on the map, then click where you want it.</p>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 5l7 7-7 7"/></svg>Data source</summary>
+        <div class="secbody">
+          <p class="hint" id="srcNote"></p>
+        </div>
+      </details>
+    </aside>
+
+    <div id="scrim"></div>
+
+    <div id="mapwrap">
+      <canvas id="map"></canvas>
+
+      <div id="rail">
+        <button class="tool on" data-tool="pan" data-tip="Pan and select — click a suburb to assign it">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l6.5 16 2.2-6.8L19.5 11z"/></svg></button>
+        <button class="tool" data-tool="vertex" data-tip="Reshape a boundary — drag the handles">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M5 18l4.5-10L15 13l4-8"/><rect x="3" y="16" width="4" height="4" rx="1"/><rect x="7.5" y="6" width="4" height="4" rx="1"/><rect x="13" y="11" width="4" height="4" rx="1"/><rect x="17" y="3" width="4" height="4" rx="1"/></svg></button>
+        <div class="raildiv"></div>
+        <button class="tool" data-tool="text" data-tip="Add a text box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 6V4h14v2M12 4v16M9 20h6"/></svg></button>
+        <button class="tool" data-tool="draw" data-tip="Draw a free-form area or line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M4 16.5l5-9 5 5 6-8"/><circle cx="4" cy="16.5" r="1.6" fill="currentColor"/><circle cx="9" cy="7.5" r="1.6" fill="currentColor"/><circle cx="14" cy="12.5" r="1.6" fill="currentColor"/><circle cx="20" cy="4.5" r="1.6" fill="currentColor"/></svg></button>
+        <button class="tool" data-tool="measure" data-tip="Measure a distance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M2 14.5L14.5 2l7.5 7.5L9.5 22z"/><path d="M6.5 10l2 2M9.5 7l2 2M12.5 4l2 2"/></svg></button>
+        <div class="raildiv"></div>
+        <button class="tool" id="btnFit" data-tip="Zoom to fit everything">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4"/></svg></button>
+      </div>
+
+      <div id="zoomer">
+        <button id="btnZin" title="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button id="btnZout" title="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+      </div>
+
+      <div id="hover"></div>
+      <div id="toast"></div>
+      <div id="statusbar">
+        <span id="stMode">Click a suburb to move it between groups</span>
+        <span style="flex:1"></span>
+        <span class="mono coordcell" id="stCoord"></span>
+      </div>
+
+      <div id="tedit">
+        <textarea id="teText" placeholder="Type your label"></textarea>
+        <div class="rowv" style="margin-top:8px"><label>Size</label><input type="range" id="teSize" min="8" max="52" step="1"><span class="val" id="teSizeV"></span></div>
+        <div class="row" style="margin-top:6px"><label>Colour</label><input type="color" id="teCol"></div>
+        <label class="tog"><input type="checkbox" id="teHalo"> White outline</label>
+        <label class="tog"><input type="checkbox" id="teBold"> Bold</label>
+        <div class="btnrow" style="margin-top:8px">
+          <button class="minibtn warn" id="teDel">Delete</button>
+          <button class="minibtn" id="teDone" style="margin-left:auto">Done</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Export modal -->
+<div class="modal" id="mdExport"><div class="sheet">
+  <header><h2>Export the map</h2><div class="spacer" style="flex:1"></div><button class="x-close" data-close>&times;</button></header>
+  <div class="sheetbody">
+    <div class="grid2">
+      <div class="card">
+        <h4>Page</h4>
+        <div class="seg" id="segPage" style="grid-template-columns:repeat(3,1fr)"><button data-v="a4">A4</button><button data-v="a3">A3</button><button data-v="screen">Screen</button></div>
+        <span class="fieldlab">Orientation</span>
+        <div class="seg" id="segOrient" style="grid-template-columns:1fr 1fr"><button data-v="l">Landscape</button><button data-v="p">Portrait</button></div>
+      </div>
+      <div class="card">
+        <h4>Quality</h4>
+        <div class="seg" id="segDpi" style="grid-template-columns:repeat(3,1fr)"><button data-v="150">150 dpi</button><button data-v="300">300 dpi</button><button data-v="600">600 dpi</button></div>
+        <p style="margin-top:8px" id="expDims"></p>
+      </div>
+    </div>
+    <span class="fieldlab">Prepared by (shown in the title block)</span>
+    <input type="text" id="expBy" placeholder="Name or team">
+    <div id="expPrev" style="margin-top:14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#000"></div>
+  </div>
+  <div class="sheetfoot">
+    <button class="minibtn" id="expGeo">GeoJSON for GIS</button>
+    <button class="minibtn" id="expSvg">SVG (vector)</button>
+    <button class="minibtn" id="expPng">PNG image</button>
+    <button class="hbtn pri" id="expPdf">Download PDF</button>
+  </div>
+</div></div>
+
+<!-- Save modal -->
+<div class="modal" id="mdSave"><div class="sheet">
+  <header><h2>Saved versions</h2><div style="flex:1"></div><button class="x-close" data-close>&times;</button></header>
+  <div class="tabs" id="saveTabs"><button class="on" data-t="shared">Shared with the team</button><button data-t="file">File on my computer</button></div>
+  <div class="sheetbody">
+    <div data-pane="shared">
+      <div class="row" style="grid-template-columns:1fr auto;gap:8px;margin-bottom:12px">
+        <input type="text" id="planName" placeholder="Name this version, e.g. Waste collection zones 2027">
+        <button class="hbtn pri" id="btnPlanSave" style="height:34px">Save version</button>
+      </div>
+      <div class="planlist" id="planList"><div class="empty"><span class="spin"></span></div></div>
+    </div>
+    <div data-pane="file" style="display:none">
+      <p class="hint" style="margin-bottom:12px">Download the whole setup as a small file — groups, colours, text, hand-drawn lines and all. Anyone can load it back here, and it works without a sign-in.</p>
+      <div class="btnrow">
+        <button class="hbtn pri" id="btnFileSave" style="height:34px">Download setup file</button>
+        <button class="hbtn" id="btnFileLoad" style="height:34px">Load a setup file…</button>
+      </div>
+      <input type="file" id="fileLoad" accept="application/json,.json" hidden>
+    </div>
+  </div>
+</div></div>
+
+<!-- Help modal -->
+<div class="modal" id="mdHelp"><div class="sheet">
+  <header><h2>How this works</h2><div style="flex:1"></div><button class="x-close" data-close>&times;</button></header>
+  <div class="tabs" id="helpTabs">
+    <button class="on" data-t="start">Getting started</button>
+    <button data-t="lines">Boundaries</button>
+    <button data-t="annot">Text &amp; drawing</button>
+    <button data-t="out">Export &amp; sharing</button>
+    <button data-t="data">About the data</button>
+  </div>
+  <div class="sheetbody help" id="helpBody"></div>
+</div></div>
+</body>
+</html>

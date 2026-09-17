@@ -1,0 +1,18 @@
+{
+  "name": "stirling-suburb-groups",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Suburb grouping map viewer for the City of Stirling, Western Australia",
+  "scripts": {
+    "build": "python3 tools/assemble.py",
+    "data": "python3 tools/build_data.py",
+    "test:core": "node tools/test_core.js",
+    "test:render": "node tools/test_render.js",
+    "serve": "python3 -m http.server 8000 --directory dist"
+  },
+  "devDependencies": {
+    "canvas": "^2.11.2",
+    "polygon-clipping": "0.15.7",
+    "jspdf": "2.5.2"
+  }
+}
