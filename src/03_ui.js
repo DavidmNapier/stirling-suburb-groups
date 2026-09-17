@@ -696,9 +696,22 @@ function drawPreview() {
 $('#btnExport').onclick = async () => { $('#expBy').value = S.by; open('#mdExport'); await fontsReady(); expDims(); };
 $('#expBy').oninput = e => { S.by = e.target.value; drawPreview(); autosave(); };
 
+function saveFileViaBrowser(name, data) {
+  try {
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Saved ' + name);
+  } catch (e) {
+    toast('That download did not go through' + (e && e.message ? ': ' + e.message : ''), true);
+  }
+}
 async function saveFile(name, data) {
   const d = await dl();
-  if (!d) { toast('Downloads are not available in this view — try opening the artifact in its own tab', true); return; }
+  if (!d) { saveFileViaBrowser(name, data); return; }   // outside claude.ai: fall back to a normal browser download
   try {
     await d.save({ filename: name, data });
     toast('Saved ' + name);
