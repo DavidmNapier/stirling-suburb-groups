@@ -1,5 +1,9 @@
 # Suburb Groups — City of Stirling
 
+![visits](https://visitor-badge.laobi.icu/badge?page_id=davidmnapier-stirling-suburb-groups)
+
+Live at: https://davidmnapier.github.io/stirling-suburb-groups/
+
 Open this folder in Claude Code and it reads `CLAUDE.md` automatically, which
 explains the state of the project and the outstanding work.
 
